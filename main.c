@@ -1,69 +1,105 @@
 #include "philo.h"
 
-void    *philo_routine(void *args)
+void	*philo_routine(void *args)
 {
-    t_phi           *phi;
+	t_phi	*phi;
+	int		left;
+	int		right;
 
-    phi = (t_phi *)args; 
-    pthread_mutex_lock(&phi->lock);
-    printf("%ld %d has taken a fork\n", timestamp(), phi->lo_name);
-    printf("%ld %d is eating\n", timestamp(), phi->lo_name);
-    usleep(phi->philo.time_to_eat * 1000);
-    pthread_mutex_unlock(&phi->lock);
-    printf("%ld %d is sleeping\n", timestamp(), phi->lo_name);
-    usleep(phi->philo.time_to_sleep * 1000);
-    printf("%ld %d is thinking\n", timestamp(), phi->lo_name);
-    printf("%ld %d died\n", timestamp(), phi->lo_name);
-    return NULL;
+	phi = (t_phi *)args;
+	left = phi->id;
+	right = phi->id + 1;
+	if (phi->id + 1 == phi->nb)
+		right = 0;
+	if ((phi->id + 1) % 2 == 0)
+		usleep(1000);
+	while (check_death(phi) == 0 && check_meals(phi) == 0)
+	{
+		philo_take_forks(phi, left, right);
+		philo_eat(phi, left, right);
+		philo_sleep(phi);
+	}
+	return (NULL);
 }
 
-long int    timestamp()
+void	*check_status(void *args)
 {
-    struct timeval  tv;
-    long int        time_in_ms;
+	t_phi	 *phi;
 
-    gettimeofday(&tv, NULL);
-    time_in_ms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-    return (time_in_ms);
+	phi = (t_phi *)args;
+	while (check_death(phi) == 0)
+	{
+		usleep(100);
+		pthread_mutex_lock(&phi->data->death);
+		if ((timestamp() - phi->start >= phi->time_to_die \
+					&& phi->data->is_dead == 0))
+		{
+			pthread_mutex_lock(&phi->data->print);
+			printf("%s %ld %d died\n", KMAG, timestamp() \
+					- phi->data->start, phi->id + 1);
+			pthread_mutex_unlock(&phi->data->print);
+			phi->data->is_dead = 1;
+			phi->stop = 1;
+			pthread_mutex_unlock(&phi->data->death);
+			break ;
+		}
+		pthread_mutex_unlock(&phi->data->death);
+	}
+	return (NULL);
 }
 
-t_philo init_philo(char **av)
+long int	timestamp(void)
 {
-    t_philo philo;
+	struct timeval	tv;
+	long int		time_in_ms;
 
-    philo.nb = ft_atoi(av[1]);
-    philo.time_to_die = ft_atoi(av[2]);
-    philo.time_to_eat = ft_atoi(av[3]);
-    philo.time_to_sleep = ft_atoi(av[4]);
-    return (philo);
+	gettimeofday(&tv, NULL);
+	time_in_ms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+	return (time_in_ms);
 }
 
-int main(int ac, char **av)
+void	init_data(char **av, t_data *data)
 {
-    t_philo         philo;
-    t_phi           phi;
-    pthread_t       id[2];
-    pthread_mutex_t mutex;
+	data->start = timestamp();
+	data->is_dead = 0;
+	data->nb = ft_atoi(av[1]);
+	data->time_to_die = ft_atoi(av[2]);
+	data->time_to_eat = ft_atoi(av[3]);
+	data->time_to_sleep = ft_atoi(av[4]);
+	if (av[5])
+		data->meals = ft_atoi(av[5]);
+	else
+		data->meals = -1;
+	init_phi(data);
+	pthread_mutex_init(&data->print, NULL);
+	pthread_mutex_init(&data->death, NULL);
+}
 
-    philo = (t_philo){};
-    phi = (t_phi){};
-    if (ac != 5)
-    {
-        write(1, "oh no...\n", 8);
-        exit(0);
-    }
-    philo = init_philo(av);
-    pthread_mutex_init(&mutex, NULL);
-    while (42)
-    {
-        while (philo.nb > 0)
-        {
-            phi.lo_name = philo.nb;
-            pthread_create(&id[phi.lo_name], NULL, philo_routine, &phi);
-            pthread_join(id[phi.lo_name], NULL);
-            philo.nb--;
-        }
-//        pthread_mutex_destroy(&mutex);
-    }
-    return (0);
+int	main(int ac, char **av)
+{
+	t_data		 d;
+	int			 i;
+
+	d = (t_data){};
+	i = -1;
+	if (ft_error(ac, av) == 0)
+		return (0);
+	init_data(av, &d);
+	while (++i < d.nb)
+	{
+		pthread_create(&d.phi[i].thread_id, NULL, philo_routine, &d.phi[i]);
+		pthread_create(&d.phi[i].thread_death, NULL, check_status, &d.phi[i]);
+		usleep(100);
+	}
+	i = -1;
+	while (++i < d.nb)
+	{
+		pthread_join(d.phi[i].thread_id, NULL);
+		pthread_detach(d.phi[i].thread_death);
+	}
+	i = -1;
+	while (++i < d.nb)
+		pthread_mutex_destroy(&d.fork[i]);
+	pthread_mutex_destroy(&d.print);
+	return (0);
 }

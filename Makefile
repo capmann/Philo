@@ -1,10 +1,10 @@
-SRCS	=	main.c ft_atoi.c
+SRCS	=	main.c ft_atoi.c routine.c
 
 OBJS	=	${SRCS:.c=.o}
 
 CC		=	gcc
 
-CFLAGS	=	-Wall -Werror -Wextra -g -pthread
+CFLAGS	=	-Wall -Werror -Wextra -g -pthread 
 
 NAME	=	philo
 
