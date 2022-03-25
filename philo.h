@@ -1,14 +1,14 @@
 #ifndef PHILO_H
 # define PHILO_H
 
-# define KNRM	"\x1B[0m"
-# define KRED	"\x1B[31m"
-# define KGRN	"\x1B[32m"
-# define KYEL	"\x1B[33m"
-# define KBLU	"\x1B[34m"
-# define KMAG	"\x1B[35m"
-# define KCYN	"\x1B[36m"
-# define KWHT	"\x1B[37m"
+# define KNRM "\x1B[0m"
+# define KRED "\x1B[31m"
+# define KGRN "\x1B[32m"
+# define KYEL "\x1B[33m"
+# define KBLU "\x1B[34m"
+# define KMAG "\x1B[35m"
+# define KCYN "\x1B[36m"
+# define KWHT "\x1B[37m"
 
 # include <unistd.h>
 # include <stdio.h>
@@ -52,6 +52,7 @@ int			ft_atoi(const char *str);
 int			check_death(t_phi *phi);
 int			check_meals(t_phi *phi);
 int			ft_error(int ac, char **av);
+int			ft_check_args(char *arg);
 long int	timestamp(void);
 void		init_data(char **av, t_data *data);
 void		init_phi(t_data *data);
@@ -61,5 +62,6 @@ void		philo_eat(t_phi *phi, int left, int right);
 void		philo_sleep(t_phi *phi);
 void		print(t_phi *phi, int i);
 void		*philo_routine(void *args);
+void		check_state(t_phi *phi);
 
 #endif

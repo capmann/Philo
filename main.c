@@ -24,27 +24,25 @@ void	*philo_routine(void *args)
 
 void	*check_status(void *args)
 {
-	t_phi	 *phi;
+	t_phi		*phi;
+	long int	n;
 
 	phi = (t_phi *)args;
-	while (check_death(phi) == 0)
+	if (phi->time_to_die < phi->time_to_eat + phi->time_to_sleep)
+		n = phi->time_to_die + 1;
+	else
+		n = timestamp() - phi->data->start;
+	pthread_mutex_lock(&phi->data->death);
+	if ((timestamp() - phi->start >= phi->time_to_die \
+				&& phi->data->is_dead == 0))
 	{
-		usleep(100);
-		pthread_mutex_lock(&phi->data->death);
-		if ((timestamp() - phi->start >= phi->time_to_die \
-					&& phi->data->is_dead == 0))
-		{
-			pthread_mutex_lock(&phi->data->print);
-			printf("%s %ld %d died\n", KMAG, timestamp() \
-					- phi->data->start, phi->id + 1);
-			pthread_mutex_unlock(&phi->data->print);
-			phi->data->is_dead = 1;
-			phi->stop = 1;
-			pthread_mutex_unlock(&phi->data->death);
-			break ;
-		}
-		pthread_mutex_unlock(&phi->data->death);
+		pthread_mutex_lock(&phi->data->print);
+		printf("%s%ld %d died\n", KMAG, n, phi->id + 1);
+		pthread_mutex_unlock(&phi->data->print);
+		phi->data->is_dead = 1;
+		phi->stop = 1;
 	}
+	pthread_mutex_unlock(&phi->data->death);
 	return (NULL);
 }
 
@@ -86,20 +84,14 @@ int	main(int ac, char **av)
 		return (0);
 	init_data(av, &d);
 	while (++i < d.nb)
-	{
 		pthread_create(&d.phi[i].thread_id, NULL, philo_routine, &d.phi[i]);
-		pthread_create(&d.phi[i].thread_death, NULL, check_status, &d.phi[i]);
-		usleep(100);
-	}
 	i = -1;
 	while (++i < d.nb)
-	{
 		pthread_join(d.phi[i].thread_id, NULL);
-		pthread_detach(d.phi[i].thread_death);
-	}
 	i = -1;
 	while (++i < d.nb)
 		pthread_mutex_destroy(&d.fork[i]);
 	pthread_mutex_destroy(&d.print);
+	pthread_mutex_destroy(&d.death);
 	return (0);
 }

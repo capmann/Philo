@@ -1,4 +1,4 @@
-SRCS	=	main.c ft_atoi.c routine.c
+SRCS	=	main.c ft_atoi.c routine.c check_state.c
 
 OBJS	=	${SRCS:.c=.o}
 

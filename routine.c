@@ -2,27 +2,28 @@
 
 void	philo_take_forks(t_phi *phi, int left, int right)
 {
-	if ((phi->id + 1) % 2 != 0 || (phi->nb == 3))
+	check_status(phi);
+	if ((phi->id + 1) % 2 != 0)
 	{	
-		pthread_mutex_lock(&phi->data->fork[right]);
-		print(phi, 1);
 		pthread_mutex_lock(&phi->data->fork[left]);
+		print(phi, 1);
+		pthread_mutex_lock(&phi->data->fork[right]);
 		print(phi, 1);
 	}
 	else
 	{
-		pthread_mutex_lock(&phi->data->fork[left]);
-		print(phi, 1);
+		usleep(1000);
 		pthread_mutex_lock(&phi->data->fork[right]);
 		print(phi, 1);
+		pthread_mutex_lock(&phi->data->fork[left]);
+		print(phi, 1);
 	}
-	pthread_mutex_lock(&phi->data->death);
 	phi->start = timestamp();
-	pthread_mutex_unlock(&phi->data->death);
 }
 
 void	philo_eat(t_phi *phi, int left, int right)
 {
+	check_status(phi);
 	if (check_death(phi) == 1 || check_meals(phi) == 1)
 	{
 		pthread_mutex_unlock(&phi->data->fork[right]);
@@ -35,18 +36,19 @@ void	philo_eat(t_phi *phi, int left, int right)
 		usleep(phi->time_to_eat * 1000);
 	if ((phi->id + 1) % 2 != 0)
 	{
-		pthread_mutex_unlock(&phi->data->fork[right]);
 		pthread_mutex_unlock(&phi->data->fork[left]);
+		pthread_mutex_unlock(&phi->data->fork[right]);
 	}
 	else
 	{
-		pthread_mutex_unlock(&phi->data->fork[left]);
 		pthread_mutex_unlock(&phi->data->fork[right]);
+		pthread_mutex_unlock(&phi->data->fork[left]);
 	}
 }
 
 void	philo_sleep(t_phi *phi)
 {
+	check_state(phi);
 	print(phi, 3);
 	if (check_death(phi) == 0 && check_meals(phi) == 0)
 		usleep(phi->time_to_sleep * 1000);

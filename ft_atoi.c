@@ -43,12 +43,17 @@ int	ft_error(int ac, char **av)
 {
 	int	nb;
 
-	nb = ft_atoi(av[1]);
 	if (ac != 5 && ac != 6)
 	{
 		printf("Wrong number of arguments\n");
 		return (0);
 	}
+	while (--ac > 0)
+	{
+		if (ft_check_args(av[ac]) == 1)
+			return (0);
+	}
+	nb = ft_atoi(av[1]);
 	if (nb == 1)
 	{
 		printf("%s 0 1 died\n", KMAG);
@@ -60,6 +65,25 @@ int	ft_error(int ac, char **av)
 		return (0);
 	}
 	return (1);
+}
+
+int	ft_check_args(char *arg)
+{
+	int	i;
+
+	i = 0;
+	while (arg[i])
+	{
+		if (arg[i] < '0' || arg[i] > '9')
+		{
+			printf("Invalid parameter\n");
+			return (1);
+		}
+		i++;
+	}
+	if (i > 10)
+		return (1);
+	return (0);
 }
 
 void	init_phi(t_data *data)
@@ -84,20 +108,21 @@ void	init_phi(t_data *data)
 
 void	print(t_phi *phi, int i)
 {
+	check_status(phi);
 	if (check_death(phi) == 1)
 		return ;
 	pthread_mutex_lock(&phi->data->print);
 	if (i == 1)
-		printf("%s %ld %d has taken a fork\n", KRED, \
+		printf("%s%ld %d has taken a fork\n", KRED, \
 				timestamp() - phi->data->start, phi->id + 1);
 	else if (i == 2)
-		printf("%s %ld %d is eating meal number %d\n", KGRN, \
-				timestamp() - phi->data->start, phi->id + 1, phi->meals);
+		printf("%s%ld %d is eating\n", KGRN, \
+				timestamp() - phi->data->start, phi->id + 1);
 	else if (i == 3)
-		printf("%s %ld %d is sleeping\n", KYEL, \
+		printf("%s%ld %d is sleeping\n", KYEL, \
 				timestamp() - phi->data->start, phi->id + 1);
 	else if (i == 4)
-		printf("%s %ld %d is thinking\n", KBLU, \
+		printf("%s%ld %d is thinking\n", KBLU, \
 				timestamp() - phi->data->start, phi->id + 1);
 	pthread_mutex_unlock(&phi->data->print);
 }
